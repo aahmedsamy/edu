@@ -6,15 +6,15 @@
         {% for course in object_list %}
 
             <div class="course-info">
-                <h3>{{ course.title }}</h3>
+                <h3>{{ course.subject }} - {{ course.title }}</h3>
                 <p>
                     <a href="{% url "course_edit" course.id %}">Edit</a>
                     <a href="{% url "course_delete" course.id %}">Delete</a>
                     <a href="{% url "course_module_update" course.id %}">Edit modules</a>
                     {% if course.modules.count > 0 %}
-                    <a href="{% url "module_content_list" course.modules.first.id %}">
-                        Manage contents
-                    </a>
+                        <a href="{% url "module_content_list" course.modules.first.id %}">
+                            Manage contents
+                        </a>
                     {% endif %}
                 </p>
             </div>

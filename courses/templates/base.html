@@ -1,3 +1,4 @@
+{% load course %}
 {% load static %}
 <!DOCTYPE html>
 <html>
@@ -11,6 +12,9 @@
     <a href="/" class="logo">Edu</a>
     <ul class="menu">
         {% if request.user.is_authenticated %}
+            {% if request.user|is_instructor %}
+                <li><a href="{% url "manage_course_list" %}">Dashboard</a></li>
+            {% endif %}
             <li><a href="{% url "logout" %}">Sign out</a></li>
         {% else %}
             <li><a href="{% url "login" %}">Sign in</a></li>

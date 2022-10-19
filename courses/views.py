@@ -1,6 +1,7 @@
 from braces.views import CsrfExemptMixin, JsonRequestResponseMixin
 from django.apps import apps
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.cache import cache
 from django.db.models import Count
 from django.forms import modelform_factory
 from django.shortcuts import get_object_or_404, redirect
@@ -166,13 +167,28 @@ class CourseListView(TemplateResponseMixin, View):
     template_name = 'courses/course/list.html'
 
     def get(self, request, subject_slug=None):
-        subjects = Subject.objects.annotate(
-            total_courses=Count('courses')
-        )
-        courses = Course.objects.annotate(total_modules=Count('modules'))
+        subjects = cache.get('all_subjects')
+        if not subjects:
+            subjects = Subject.objects.annotate(
+                total_courses=Count('courses'))
+            cache.set('all_subjects', subjects)
+
+        all_courses = Course.objects \
+            .annotate(total_modules=Count('modules')) \
+            .select_related('subject', 'owner')
+
         if subject_slug:
             subject = get_object_or_404(Subject, slug=subject_slug)
-            courses = courses.filter(subject=subject)
+            cache_key = f"subject_{subject.id}_courses"
+            courses = cache.get(cache_key)
+            if not courses:
+                courses = courses.filter(subject_id=subject.id)
+                cache.set(cache_key, courses)
+        else:
+            courses = cache.get('all_courses')
+            if not courses:
+                courses = all_courses
+                cache.set('all_courses', courses)
         return self.render_to_response({'subjects': subjects,
                                         'subject': subject if subject_slug else None,
                                         'courses': courses})
@@ -184,6 +200,8 @@ class CourseDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        course = self.get_object()
+        context['enrolled'] = self.request.user in course.students.all()
         context['enroll_form'] = CourseEnrollForm(
             initial={'course': self.object}
         )
