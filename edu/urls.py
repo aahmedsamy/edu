@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('course/', include('courses.urls')),
     path('students/', include('students.urls')),
+    path('api/', include("courses.api.urls")),
     path('__debug__/', include('debug_toolbar.urls')),
 ]
 
